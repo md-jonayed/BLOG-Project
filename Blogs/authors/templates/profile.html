@@ -7,40 +7,66 @@
 
 {% block content %}
 <style>
-  /* Container holding title + buttons */
-  .post-header {
+  .post-card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: nowrap; /* prevent wrapping */
+    flex-direction: column;
   }
-
-  /* Text container on the left */
-  .post-header-left {
-    flex: 1 1 auto;
-    min-width: 0; /* allows shrinking */
-    padding-right: 1rem; /* space between text and buttons */
-    overflow-wrap: break-word; /* break long words nicely */
+  .post-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.12);
   }
-
-  /* Buttons container on the right */
-  .post-header-right {
-    flex: 0 0 auto;
+  .post-image {
+    height: 200px;
+    overflow: hidden;
+  }
+  .post-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  .post-card:hover .post-image img {
+    transform: scale(1.08);
+  }
+  .post-content {
+    padding: 1rem 1.25rem;
+    flex-grow: 1;
     display: flex;
-    gap: 0.5rem; /* space between buttons */
-    align-items: center;
-    min-width: 180px; /* fixed minimum width */
-    justify-content: flex-end;
+    flex-direction: column;
   }
-
-  /* Prevent button text wrapping */
-  .post-header-right a.btn {
-    white-space: nowrap;
+  .post-title a {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #212529;
+    text-decoration: none;
+  }
+  .post-title a:hover {
+    color: #0d6efd;
+  }
+  .post-meta {
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+  .read-more {
+    margin-top: auto; /* pushes buttons to bottom */
+  }
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
   }
 </style>
 
 <div class="container py-5">
-  <div class="row justify-content-center">
+  <!-- Profile Card -->
+  <div class="row justify-content-center mb-5">
     <div class="col-md-8 col-lg-6">
       <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body text-center p-5">
@@ -55,56 +81,55 @@
     </div>
   </div>
 
+  <!-- User's Posts Grid -->
   {% if data %}
-  <div class="row justify-content-center mt-5">
+  <h3 class="fw-bold text-primary mb-4 text-center">Your Posts</h3>
+  <div class="row g-4">
     {% for post in data %}
-    <div class="col-lg-10 mb-5">
-      <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="card-body p-5">
-          <div class="post-header mb-3">
-            <div class="post-header-left">
-              <h3 class="fw-bold text-dark mb-1">
-                <i class="bi bi-journal-text me-2 text-primary"></i>{{ post.title }}
-              </h3>
-              <p class="text-muted mb-0 small">
-                <i class="bi bi-person-circle me-1"></i>Author:
-                <strong>{{ post.author }}</strong>
-              </p>
-              {% for cat in post.category.all %}
-              <p class="text-muted mb-0 small">
-                <i class="bi bi-tag me-1"></i>Category:
-                <strong>{{ cat.name }}</strong>
-              </p>
-              {% endfor %}
-            </div>
-            <div class="post-header-right">
-              <a class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm"
-                 data-bs-toggle="collapse"
-                 href="#post-{{ post.id }}"
-                 role="button"
-                 aria-expanded="false"
-                 aria-controls="post-{{ post.id }}">
-                <i class="bi bi-eye me-1"></i>Read More
-              </a>
-              <a href="{% url 'edit_posts' post.id %}" class="btn btn-warning btn-sm rounded-pill">Edit</a>
-              <a href="{% url 'delete_posts' post.id %}" class="btn btn-danger btn-sm rounded-pill"
+    <div class="col-md-6 col-lg-4">
+      <div class="post-card">
+
+        <!-- Post Image -->
+        {% if post.image %}
+        <div class="post-image">
+          <img src="{{ post.image.url }}" alt="{{ post.title }}">
+        </div>
+        {% endif %}
+
+        <!-- Post Content -->
+        <div class="post-content">
+          <h3 class="post-title mb-2">
+            <a href="{% url 'DetailPostView' post.id %}">{{ post.title }}</a>
+          </h3>
+
+          <p class="post-meta mb-2">
+            <i class="bi bi-tag me-1"></i>
+            {% for cat in post.category.all %}
+              <span class="badge bg-light text-dark border">{{ cat.name }}</span>
+            {% endfor %}
+          </p>
+
+          <!-- Short Preview -->
+          <p class="text-muted small mb-3">
+            {{ post.content|truncatewords:20 }}
+          </p>
+
+          <!-- Buttons -->
+          <div class="read-more">
+            <a href="{% url 'DetailPostView' post.id %}" 
+               class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm">
+              <i class="bi bi-eye me-1"></i> Read More
+            </a>
+            <div class="action-buttons">
+              <a href="{% url 'edit_posts' post.id %}" 
+                 class="btn btn-warning btn-sm rounded-pill">Edit</a>
+              <a href="{% url 'delete_posts' post.id %}" 
+                 class="btn btn-danger btn-sm rounded-pill"
                  onclick="return confirm('Are you sure you want to delete this post?');">Delete</a>
             </div>
           </div>
-
-          <p class="text-muted mb-0 text-truncate" style="font-size: 0.95rem;">
-            {{ post.content|truncatewords:30 }}
-          </p>
-
-          <div class="collapse mt-4" id="post-{{ post.id }}">
-            <div class="bg-light p-4 rounded-4 border-start border-4 border-primary shadow-sm">
-              <h6 class="text-secondary fw-semibold mb-3">
-                <i class="bi bi-file-earmark-text me-1"></i>Full Content
-              </h6>
-              <p class="text-dark" style="white-space: pre-wrap">{{ post.content }}</p>
-            </div>
-          </div>
         </div>
+
       </div>
     </div>
     {% endfor %}

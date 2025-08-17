@@ -6,6 +6,10 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from posts.models import Post
+from django.contrib.auth.views import LoginView, LogoutView
+from django.urls import reverse_lazy
+from django.contrib.auth import logout as auth_logout
+from django.http import HttpResponseRedirect
 # Create your views here.
 
 
@@ -36,25 +40,45 @@ def register(request):
     return render(request, 'register.html', context={'form': form, 'type': 'Register'})
 
 
-def userLogin(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f"Welcome {user.username}!")
-                return redirect('profile')
-            else:
-                messages.error(request, "Invalid username or password.")
-        else:
-            messages.error(request, "Please correct the errors below.")
-    else:
-        form = AuthenticationForm()
+# def userLogin(request):
+#     if request.method == 'POST':
+#         form = AuthenticationForm(request, data=request.POST)
+#         if form.is_valid():
+#             username = form.cleaned_data['username']
+#             password = form.cleaned_data['password']
+#             user = authenticate(username=username, password=password)
+#             if user is not None:
+#                 login(request, user)
+#                 messages.success(request, f"Welcome {user.username}!")
+#                 return redirect('profile')
+#             else:
+#                 messages.error(request, "Invalid username or password.")
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = AuthenticationForm()
 
-    return render(request, 'register.html', context={'form': form, 'type': 'Login'})
+#     return render(request, 'register.html', context={'form': form, 'type': 'Login'})
+
+class UserLoginView(LoginView):
+    template_name = "register.html"
+    # success_url = reverse_lazy('profile')
+
+    def get_success_url(self):
+        return reverse_lazy('profile')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Logged in Successful")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.success(self.request, "Login information invalid")
+        return super().form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['type'] = 'Login'
+        return context
 
 
 @login_required
@@ -98,6 +122,25 @@ def changePassword(request):
 
     return render(request, 'passwordChange.html', {'form': form})
 
+
 def logoutUser(request):
     logout(request)
     return redirect('home')
+
+
+# class LogoutUserView(LogoutView):
+#     # default redirect if no ?next= and no settings override
+#     next_page = reverse_lazy('home')
+
+#     # Ensure message is added *after* logout; mirror Django's logic
+#     def post(self, request, *args, **kwargs):
+#         auth_logout(request)  # logs out (flushes session)
+#         messages.success(request, "You have been logged out successfully.")
+#         next_page = self.get_next_page()  # honors ?next=, next_page attr, or settings
+#         if next_page:
+#             return HttpResponseRedirect(next_page)
+#         return self.logged_out_response(request)
+
+#     # GET should behave like POST for LogoutView
+#     def get(self, request, *args, **kwargs):
+#         return self.post(request, *args, **kwargs)
